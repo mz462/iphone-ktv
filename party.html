@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#140826">
+<title>KTV 派对</title>
+<style>
+:root{color-scheme:dark;--bg:#140826;--card:rgba(255,255,255,.08);--line:rgba(255,255,255,.07);--pink:#ff2d78;--orange:#ff9500;--gold:#ffd23f;--dim:rgba(255,255,255,.55)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;background:radial-gradient(130% 50% at 50% 0,#3d1462 0,var(--bg) 70%) no-repeat;color:#fff;
+  font:16px/1.35 -apple-system,"PingFang SC",sans-serif;padding:0 18px calc(150px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit;cursor:pointer}
+header{margin:0 -18px;padding:calc(14px + env(safe-area-inset-top)) 18px 12px;position:sticky;top:0;z-index:4;background:linear-gradient(var(--bg) 80%,transparent)}
+.top{display:flex;justify-content:space-between;align-items:center;min-height:40px}
+h1{font-size:30px;font-weight:800;letter-spacing:-.5px;margin:0}
+#who{display:flex;align-items:center;gap:6px;background:var(--card);border:0;border-radius:99px;padding:6px 12px 6px 6px;font-size:14px;font-weight:600}
+#who i{width:24px;height:24px;border-radius:50%;background:var(--pink);display:flex;align-items:center;justify-content:center;font:800 12px -apple-system,sans-serif}
+#who.anon{padding-left:12px;color:var(--dim)}#who.anon i{display:none}
+#sf{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:0 6px 0 14px;height:50px;margin-top:12px}
+#sf:focus-within{border-color:var(--pink);background:rgba(255,45,120,.08)}
+#sf svg{flex:none;opacity:.6}
+#q{flex:1;min-width:0;height:100%;font:17px -apple-system,"PingFang SC",sans-serif;color:#fff;background:none;border:0;outline:none;-webkit-appearance:none}
+#q::-webkit-search-cancel-button{display:none}
+#clear{width:36px;height:36px;border:0;background:none;display:flex;align-items:center;justify-content:center;flex:none}
+#clear b{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.25);font:700 13px/20px -apple-system,sans-serif;text-align:center}
+.lab{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--dim);margin:18px 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--card);border:0;border-radius:99px;padding:8px 14px;font-size:14px}
+.hint{color:var(--dim);font-size:14px;text-align:center;padding:28px 0}
+.row{display:flex;align-items:center;gap:12px;padding:8px 0}
+.cov{width:48px;height:48px;border-radius:9px;object-fit:cover;flex:none;background:var(--card)}
+.row .t{flex:1;min-width:0}
+.tt,.ta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt{font-weight:700}
+.ta{font-size:13px;color:var(--dim)}
+.hl{color:var(--gold)}
+.num{width:20px;text-align:center;font-weight:800;color:var(--gold);flex:none}
+.add{width:38px;height:38px;border-radius:50%;background:var(--pink);border:0;flex:none;font:500 24px/1 -apple-system,sans-serif;display:flex;align-items:center;justify-content:center;padding-bottom:2px}
+.add:active{transform:scale(.88)}.add:disabled{opacity:.4}
+.tag{flex:none;font-size:12px;font-weight:700;padding:5px 10px;border-radius:99px;border:0}
+.tag.q{background:rgba(255,210,63,.15);color:var(--gold)}
+.tag.n{background:rgba(255,45,120,.18);color:var(--pink)}
+button.tag:active{opacity:.6}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:18px -18px 4px;padding:0 18px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;border:0;background:var(--card);border-radius:99px;padding:8px 14px;font-size:14px;font-weight:700;color:var(--dim)}
+.tabs button.on{background:#fff;color:var(--bg)}
+.acts{display:flex;gap:6px;flex:none}
+
+footer{position:fixed;left:0;right:0;bottom:0;z-index:6}
+#mini,#confirm{margin:0 10px 8px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+#mini{background:rgba(48,24,78,.92);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);padding:10px;display:flex;align-items:center;gap:10px}
+#mini .cov{width:42px;height:42px;border-radius:8px}
+#mini .tt{font-size:14px}#mini .ta{font-size:12px}
+.seg{display:flex;background:rgba(0,0,0,.35);border-radius:99px;padding:3px;flex:none}
+.seg button{border:0;background:none;font-size:13px;font-weight:700;padding:7px 11px;border-radius:99px;color:var(--dim)}
+.seg button.on{background:var(--pink);color:#fff}
+.seg button.on[data-m=original]{background:var(--orange)}
+#solo{font-size:12px;font-weight:700;color:var(--dim);background:rgba(0,0,0,.35);border-radius:99px;padding:7px 11px;flex:none}
+#skip{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:0;flex:none;display:flex;align-items:center;justify-content:center}
+#skip:active{transform:scale(.88)}
+#confirm{background:var(--pink);padding:14px;display:flex;flex-direction:column;gap:10px}
+#confirm[hidden],#mini[hidden]{display:none}
+#confirm b{font-size:16px}#confirm p{margin:0;font-size:13px;opacity:.85}
+.cb{display:flex;gap:8px}
+.cb button{flex:1;height:46px;border-radius:12px;border:0;font-weight:800;font-size:16px}
+#no{background:rgba(0,0,0,.25)}#yes{background:#fff;color:var(--pink)}
+nav{display:flex;background:rgba(20,8,38,.95);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;background:none;border:0;color:rgba(255,255,255,.45);font-size:11px;font-weight:600;padding:2px 0;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.on{color:#fff}
+nav svg{width:24px;height:24px}
+.badge{background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;border-radius:99px;padding:1px 6px;margin-left:3px}
+.badge:empty{display:none}
+
+#scrim{position:fixed;inset:0;background:rgba(5,0,15,.6);z-index:15}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:16;background:#24123c;border-radius:28px 28px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px}
+#scrim[hidden],#sheet[hidden]{display:none}
+#sheet h2{margin:0;font-size:22px}
+#sheet p{margin:0;color:var(--dim);font-size:14px}
+input.f{width:100%;height:52px;font:18px -apple-system,"PingFang SC",sans-serif;color:#fff;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:0 16px;outline:none;-webkit-appearance:none}
+input.f:focus{border-color:var(--pink)}
+.ghost{height:44px;border:0;background:none;color:var(--dim);font-size:15px;margin-top:-6px}
+.cta{height:54px;border-radius:16px;border:0;background:var(--pink);font-weight:800;font-size:17px}
+
+/* 互动 / 应援 */
+h3{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--dim);margin:20px 0 10px}
+.frow{display:flex;gap:8px}.frow input{flex:1}
+.go{background:var(--pink);color:#fff;border:0;border-radius:16px;font-weight:700;padding:0 18px;flex:none}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.emo{font-size:32px;background:var(--card);border:0;border-radius:18px;aspect-ratio:1;transition:transform .1s}
+.emo:active{transform:scale(.85)}
+.fx{background:var(--card);border:0;border-radius:18px;padding:12px 0;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:4px}
+.fx b{font-size:30px}.fx:disabled{opacity:.4}
+.sws{display:flex;flex-wrap:wrap;gap:12px}
+.sw{width:44px;height:44px;border-radius:50%;border:3px solid transparent;box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
+.sw.on{border-color:#fff}
+.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--card);border-radius:14px;padding:4px}
+.modes button{background:none;border:0;border-radius:10px;color:var(--dim);font-size:14px;font-weight:600;padding:10px 0}
+.modes button.on{background:#fff;color:#000}
+#go{width:100%;height:56px;margin-top:22px;font-size:18px;border-radius:18px;background:linear-gradient(90deg,var(--pink),var(--orange))}
+.note{color:var(--dim);font-size:12px;margin-top:10px;text-align:center}
+#stage{position:fixed;inset:0;z-index:30;overflow:hidden;display:flex;align-items:center}
+#stage[hidden]{display:none}
+#mq{position:absolute;left:0;top:50%;white-space:nowrap;font-weight:900;font-size:42vh;line-height:1;
+  text-shadow:0 0 .06em rgba(0,0,0,.45);animation:mq linear infinite;will-change:transform}
+@keyframes mq{from{transform:translate(100vw,-50%)}to{transform:translate(-100%,-50%)}}
+#exit{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));width:100%;text-align:center;font-size:12px;opacity:.45;mix-blend-mode:difference}
+#toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:#fff;color:var(--bg);font-weight:700;font-size:14px;
+  padding:9px 16px;border-radius:99px;opacity:0;transition:opacity .2s;z-index:40;pointer-events:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+#toast.show{opacity:1}
+#wake{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><h1 id="title">点歌</h1><button id="who"><i></i><span></span></button></div>
+  <form id="sf" action="."><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="2.4"><circle cx="7.5" cy="7.5" r="6"/><path d="M12 12l5 5" stroke-linecap="round"/></svg>
+    <input id="q" type="search" placeholder="歌名、歌手都行" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button type="button" id="clear" hidden><b>×</b></button></form>
+</header>
+
+<main>
+<section id="song"><div id="results"></div></section>
+<section id="queue" hidden><div id="qlist"></div></section>
+<section id="fun" hidden>
+  <h3>发表情到电视</h3>
+  <div class="grid" id="emojis"></div>
+  <h3>发弹幕</h3>
+  <form id="df" class="frow"><input id="dm" class="f" maxlength="30" placeholder="说点什么，30 字以内" enterkeyhint="send"><button class="go">发送</button></form>
+  <h3>放特效</h3>
+  <div class="grid" id="fxs"></div>
+</section>
+<section id="cheer" hidden>
+  <h3>颜色</h3>
+  <div class="sws" id="sws"></div>
+  <h3>模式</h3>
+  <div class="modes" id="modes"></div>
+  <h3>滚动大字（可不填）</h3>
+  <input id="ct" class="f" maxlength="20" placeholder="比如：小明最棒！">
+  <button class="go" id="go">举起来应援</button>
+  <p class="note">点屏幕任意处退出。“跟歌词闪”时，全场手机在每句歌词开始时一起闪。</p>
+</section>
+</main>
+
+<footer>
+  <div id="confirm" hidden><b id="cq"></b><p id="cs"></p><div class="cb"><button id="no">算了</button><button id="yes">切歌</button></div></div>
+  <div id="mini">
+    <img class="cov" id="nowArt" alt="">
+    <div class="t"><div class="tt" id="nowTitle">连接中…</div><div class="ta" id="nowSub"></div></div>
+    <div class="seg" id="seg"><button data-m="original">原唱</button><button data-m="accompany">伴唱</button></div>
+    <span id="solo" hidden>仅原唱</span>
+    <button id="skip" aria-label="切歌"><svg width="18" height="16" viewBox="0 0 18 16" fill="#fff"><path d="M1 1.5v13a.8.8 0 0 0 1.2.7l10.4-6.5a.8.8 0 0 0 0-1.4L2.2.8A.8.8 0 0 0 1 1.5z"/><rect x="14" y="1" width="3" height="14" rx="1"/></svg></button>
+  </div>
+  <nav>
+    <button data-t="song" data-h="点歌" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></svg>点歌</button>
+    <button data-t="queue" data-h="已点"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>已点<span class="badge" id="qn"></span></span></button>
+    <button data-t="fun" data-h="互动"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>互动</button>
+    <button data-t="cheer" data-h="应援"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>应援</button>
+  </nav>
+</footer>
+
+<div id="scrim" hidden></div>
+<form id="sheet" hidden>
+  <h2>你叫什么？</h2>
+  <p id="why">电视上会显示是谁点的歌。</p>
+  <input id="name" class="f" maxlength="12" placeholder="不填就显示“朋友”" autocomplete="nickname" enterkeyhint="done">
+  <button class="cta">好了</button>
+  <button type="button" class="ghost" id="ncancel">取消</button>
+</form>
+
+<div id="stage" hidden><div id="mq"></div><div id="exit">点一下退出</div></div>
+<div id="toast"></div>
+<video id="wake" playsinline muted loop src="data:video/mp4;base64,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"></video>
+
+<script>
+const $ = s => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const store = {
+  get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+let toastTimer;
+function toast(s) { const t = $('#toast'); t.textContent = s; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800); }
+const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+function cover(src) { const i = el('img', 'cov'); i.alt = ''; if (src) { i.src = src; i.loading = 'lazy'; } return i; }
+
+let state = { now: {}, queue: [], mode: 'accompany' };
+
+// Who owns a pick is this random id, not the name: names can be changed or shared.
+const uid = store.get('uid') || Math.random().toString(36).slice(2) + Date.now().toString(36);
+store.set('uid', uid);
+const myPids = new Set((() => { try { return JSON.parse(store.get('pids')) || []; } catch { return []; } })());
+function addPid(pid) { myPids.add(pid); store.set('pids', JSON.stringify([...myPids].slice(-50))); }
+
+// Name: asked once, the first time it is needed.
+let myName = store.get('name'), afterName = null;
+function paintName() {
+  $('#who').classList.toggle('anon', !myName);
+  $('#who i').textContent = myName.slice(0, 1).toUpperCase();
+  $('#who span').textContent = myName || '起个名字';
+}
+function askName(why, then) {
+  afterName = then || null;
+  $('#why').textContent = why;
+  $('#name').value = myName;
+  $('#scrim').hidden = $('#sheet').hidden = false;
+  $('#name').focus();
+}
+function closeSheet() { $('#scrim').hidden = $('#sheet').hidden = true; $('#name').blur(); afterName = null; }
+const needName = (why, fn) => myName ? fn() : askName(why, fn);
+$('#who').onclick = () => askName('电视上会显示是谁点的歌。');
+$('#scrim').onclick = $('#ncancel').onclick = closeSheet;
+$('#sheet').onsubmit = e => {
+  e.preventDefault();
+  const v = $('#name').value.trim() || '朋友';
+  myName = v; store.set('name', v); paintName();
+  const f = afterName;
+  closeSheet();
+  if (f) f();
+};
+paintName();
+
+async function post(path, obj) {
+  try {
+    const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...obj, by: myName || '朋友', uid }) });
+    if (r.ok) return await r.json().catch(() => ({}));
+    toast((await r.json().catch(() => ({}))).msg || '没成功，再试一次');
+  } catch { toast('没连上主人的手机，再试一次'); }
+  return null;
+}
+
+// Tabs
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('main > section').forEach(s => s.hidden = s.id !== b.dataset.t);
+  $('#title').textContent = b.dataset.h;
+  $('#sf').hidden = b.dataset.t !== 'song';
+  scrollTo(0, 0);
+});
+
+// 点歌: search as you type
+let results = null, lastQ = '', seq = 0, timer;
+const recent = (() => { try { return JSON.parse(store.get('recent')) || []; } catch { return []; } })();
+function addRecent(q) {
+  q = q.trim();
+  if (!q) return;
+  const i = recent.indexOf(q);
+  if (i >= 0) recent.splice(i, 1);
+  recent.unshift(q);
+  recent.length = Math.min(recent.length, 8);
+  store.set('recent', JSON.stringify(recent));
+}
+async function search(q) {
+  const my = ++seq;
+  if (!results) $('#results').replaceChildren(el('p', 'hint', '搜索中…'));
+  try {
+    const list = await (await fetch('/api/search?q=' + encodeURIComponent(q))).json();
+    if (my !== seq) return;
+    results = list; lastQ = q;
+    paintSearch();
+  } catch { if (my === seq) $('#results').replaceChildren(el('p', 'hint', '搜索失败，再试一次')); }
+}
+const q = $('#q');
+q.oninput = () => {
+  clearTimeout(timer);
+  const v = q.value.trim();
+  $('#clear').hidden = !q.value;
+  if (!v) { seq++; results = null; paintSearch(); return; }
+  timer = setTimeout(() => search(v), 300);
+};
+$('#sf').onsubmit = e => { e.preventDefault(); clearTimeout(timer); q.blur(); const v = q.value.trim(); if (v) { addRecent(v); search(v); } };
+$('#clear').onclick = () => { q.value = ''; q.oninput(); q.focus(); };
+// Scrolling the results closes the keyboard so more rows fit.
+addEventListener('touchmove', () => { if (document.activeElement === q) q.blur(); }, { passive: true });
+
+function hl(text, needle) {
+  const i = needle ? text.toLowerCase().indexOf(needle.toLowerCase()) : -1;
+  if (i < 0) return [text];
+  return [text.slice(0, i), el('span', 'hl', text.slice(i, i + needle.length)), text.slice(i + needle.length)];
+}
+function where(id) {
+  if (id && state.now.id === id) return ['n', '正在唱'];
+  const i = state.queue.findIndex(x => x.id === id);
+  return i >= 0 ? ['q', `排队 #${i + 1}`] : null;
+}
+function songRow(s, needle) {
+  const row = el('div', 'row'), t = el('div', 't'), tt = el('div', 'tt'), ta = el('div', 'ta');
+  tt.append(...hl(s.title, needle));
+  ta.append(...hl(s.artist, needle), s.n > 1 ? ` · 今晚点了 ${s.n} 次` : s.dur ? ` · ${mmss(s.dur)}` : '');
+  t.append(tt, ta);
+  const w = where(s.id);
+  let right;
+  if (w) right = el('span', 'tag ' + w[0], w[1]);
+  else {
+    right = el('button', 'add', '+');
+    right.setAttribute('aria-label', '点歌');
+    right.onclick = () => needName(`电视上会显示“（你的名字）点了《${s.title}》”。`, () => pick(s, right));
+  }
+  row.append(cover(s.art), t, right);
+  return row;
+}
+
+// Recommendations under an empty search box. 你点过的 lives on this phone only.
+let recs = { host: [], tonight: [], charts: [] }, recTab = store.get('recTab') || '';
+const myPicks = (() => { try { return JSON.parse(store.get('mine')) || []; } catch { return []; } })();
+const REC_TABS = [['tonight', '今晚热门', '今晚还没人点歌'], ['host', '主人常听', '主人最近没听歌'],
+                  ['charts', '排行榜', '排行榜没加载出来'], ['mine', '你点过的', '你点过的歌会出现在这里']];
+async function loadRecs() {
+  try { recs = await (await fetch('/api/recs')).json(); } catch { return; }
+  if (!results) paintSearch();
+}
+function paintSearch() {
+  const box = $('#results');
+  if (!results) {
+    const parts = [];
+    if (recent.length) {
+      const chips = el('div', 'chips');
+      recent.forEach(r => { const c = el('button', 'chip', r); c.onclick = () => { q.value = r; $('#clear').hidden = false; addRecent(r); search(r); }; chips.append(c); });
+      parts.push(el('div', 'lab', '最近搜过'), chips);
+    }
+    const lists = { ...recs, mine: myPicks };
+    // Until the guest picks a tab, open the first one that has songs.
+    const tab = REC_TABS.find(x => x[0] === recTab) || REC_TABS.find(x => lists[x[0]]?.length) || REC_TABS[1];
+    const tabs = el('div', 'tabs');
+    REC_TABS.forEach(([k, label]) => {
+      const b = el('button', k === tab[0] ? 'on' : '', label);
+      b.onclick = () => { recTab = k; store.set('recTab', k); paintSearch(); };
+      tabs.append(b);
+    });
+    const list = lists[tab[0]] || [];
+    parts.push(tabs, ...(list.length ? list.map(s => songRow(s)) : [el('p', 'hint', tab[2])]));
+    box.replaceChildren(...parts);
+    return;
+  }
+  if (!results.length) { box.replaceChildren(el('p', 'hint', '没找到，换个写法试试（简繁、英文名都可以）')); return; }
+  box.replaceChildren(...results.map(s => songRow(s, lastQ)));
+}
+async function pick(s, b) {
+  b.disabled = true;
+  const r = await post('/api/queue', s);
+  if (r) {
+    if (r.pid) addPid(r.pid);
+    if (results) addRecent(lastQ);
+    const i = myPicks.findIndex(x => x.id === s.id);
+    if (i >= 0) myPicks.splice(i, 1);
+    myPicks.unshift({ id: s.id, title: s.title, artist: s.artist, art: s.art, dur: s.dur });
+    myPicks.length = Math.min(myPicks.length, 30);
+    store.set('mine', JSON.stringify(myPicks));
+    toast(`已点《${s.title}》，排第 ${r.pos || state.queue.length + 1}`);
+    loadRecs();
+  } else b.disabled = false;
+}
+
+// 已点
+function paintQueue() {
+  $('#qn').textContent = state.queue.length || '';
+  const list = $('#qlist');
+  if (!state.queue.length) { list.replaceChildren(el('p', 'hint', '还没人点歌，去“点歌”挑一首吧')); return; }
+  list.replaceChildren(...state.queue.map((s, i) => {
+    const row = el('div', 'row'), t = el('div', 't'), ta = el('div', 'ta', s.artist + ' · ');
+    const mine = myPids.has(s.pid);
+    ta.append(mine ? el('span', 'hl', '你点的') : s.by);
+    t.append(el('div', 'tt', s.title), ta);
+    row.append(el('span', 'num', String(i + 1)), cover(s.art), t);
+    if (s.locked) { row.append(el('span', 'tag q', i ? '已排好' : '下一首')); return row; }
+    const acts = el('div', 'acts'), top = el('button', 'tag q', '优先');
+    top.onclick = () => needName('电视上会显示是谁把歌顶上去的。', async () => {
+      top.disabled = true;
+      if (await post('/api/control', { action: 'top', value: String(s.pid) })) toast(`《${s.title}》下一首就唱`);
+      top.disabled = false;
+    });
+    acts.append(top);
+    if (mine) {
+      const b = el('button', 'tag n', '撤回');
+      b.onclick = async () => { b.disabled = true; if (!await post('/api/control', { action: 'remove', value: String(s.pid) })) b.disabled = false; };
+      acts.append(b);
+    }
+    row.append(acts);
+    return row;
+  }));
+}
+
+// Now playing bar: 原唱 / 伴唱 and 切歌 for everyone
+function paintNow() {
+  const n = state.now, on = !!n.title;
+  $('#nowTitle').textContent = n.title || '还没开始';
+  $('#nowSub').textContent = on ? (n.by ? `${n.by} 点的` : n.artist) : '点一首歌开场吧';
+  const art = $('#nowArt');
+  if (n.art) { if (art.getAttribute('src') !== n.art) art.src = n.art; art.style.visibility = ''; } else art.style.visibility = 'hidden';
+  $('#seg').hidden = !on || state.mode === 'nosing';
+  $('#solo').hidden = !on || state.mode !== 'nosing';
+  $('#skip').hidden = !on;
+  document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.m === state.mode));
+  if (!on) hideConfirm();
+}
+let confirmTimer, confirmAt = 0, askTitle, onYes;
+function ask(q, sub, yes, fn) {
+  askTitle = state.now.title; onYes = fn;
+  $('#cq').textContent = q; $('#cs').textContent = sub; $('#yes').textContent = yes;
+  $('#mini').hidden = true; $('#confirm').hidden = false;
+  confirmAt = performance.now();
+  clearTimeout(confirmTimer); confirmTimer = setTimeout(hideConfirm, 6000);
+}
+function hideConfirm() { $('#confirm').hidden = true; $('#mini').hidden = false; clearTimeout(confirmTimer); }
+$('#no').onclick = hideConfirm;
+$('#yes').onclick = () => { if (performance.now() - confirmAt < 400) return; hideConfirm(); onYes(); };   // a double tap on 切歌 lands here
+
+// Whoever picked the song switches it straight away; anyone else confirms first.
+document.querySelectorAll('#seg button').forEach(b => b.onclick = () => {
+  const m = b.dataset.m, orig = m === 'original';
+  if (m === state.mode) return;
+  const go = () => { state.mode = m; paintNow(); post('/api/control', { action: 'mode', value: m }); };   // feels instant; the server's state follows
+  needName('电视上会显示是谁切的原唱/伴唱。', () => myPids.has(state.now.pid) ? go()
+    : ask(orig ? '切到原唱？' : '切到伴唱？', (orig ? '会放出原唱人声' : '会去掉人声，只留伴奏') + '，全场都听得到。电视上会显示是你切的。',
+          orig ? '切到原唱' : '切到伴唱', go));
+});
+// No confirm: the singer often shouts for someone to skip. The TV says who did it; the server ignores a second
+// tap because it names a song that's no longer playing.
+$('#skip').onclick = () => needName('电视上会显示是谁切的歌。', async () => {
+  if (await post('/api/control', { action: 'skip', value: state.now.title })) toast('已切歌');
+});
+
+let nowID;
+function render(st) {
+  if (st.now.id !== nowID) { nowID = st.now.id; loadRecs(); }   // 今晚热门 and 主人常听 move as songs change
+  state = st;
+  if (state.now.title !== askTitle && !$('#confirm').hidden) hideConfirm();   // song moved on by itself
+  paintNow(); paintQueue();
+  paintSearch();
+}
+let es;
+function connect() {
+  es = new EventSource('/api/events');
+  es.addEventListener('state', e => render(JSON.parse(e.data)));
+  es.addEventListener('line', e => onLine(JSON.parse(e.data)));
+  es.onerror = () => { $('#nowSub').textContent = '连不上主人的手机，重连中…'; };
+}
+connect();
+document.addEventListener('visibilitychange', () => { if (!document.hidden && es.readyState === EventSource.CLOSED) connect(); });
+paintSearch(); paintQueue();
+
+// 互动
+['👏', '❤️', '🔥', '😂', '😍', '🎉', '🌹', '👍', '🥳', '😭', '🙌', '💯', '🎤', '✨', '🍻', '🤘'].forEach(x => {
+  const b = el('button', 'emo', x);
+  b.onclick = () => post('/api/cheer', { type: 'emoji', value: x });
+  $('#emojis').append(b);
+});
+$('#df').onsubmit = e => {
+  e.preventDefault();
+  const v = $('#dm').value.trim();
+  if (!v) return;
+  needName('弹幕前面会显示你的名字。', async () => {
+    if (await post('/api/cheer', { type: 'text', value: v })) { $('#dm').value = ''; toast('已发到电视'); }
+  });
+};
+[['fireworks', '🎆', '烟花'], ['confetti', '🎊', '撒花'], ['hearts', '💖', '爱心'], ['clap', '👏', '掌声']].forEach(([k, icon, label]) => {
+  const b = el('button', 'fx');
+  b.append(el('b', null, icon), label);
+  b.onclick = () => { post('/api/cheer', { type: 'fx', value: k }); b.disabled = true; setTimeout(() => b.disabled = false, 1500); };
+  $('#fxs').append(b);
+});
+
+// 应援
+const COLORS = ['#ff2d78', '#ff9500', '#ffd23f', '#34c759', '#00d1c1', '#0a84ff', '#bf5af2', '#ffffff'];
+let color = store.get('color') || COLORS[0], mode = store.get('mode') || 'lyric';
+COLORS.forEach(c => {
+  const b = el('button', 'sw' + (c === color ? ' on' : ''));
+  b.style.background = c;
+  b.onclick = () => { color = c; store.set('color', c); document.querySelectorAll('.sw').forEach(x => x.classList.toggle('on', x === b)); };
+  $('#sws').append(b);
+});
+[['steady', '常亮'], ['blink', '闪烁'], ['lyric', '跟歌词闪'], ['rainbow', '彩虹']].forEach(([k, label]) => {
+  const b = el('button', k === mode ? 'on' : '', label);
+  b.onclick = () => { mode = k; store.set('mode', k); document.querySelectorAll('.modes button').forEach(x => x.classList.toggle('on', x === b)); };
+  $('#modes').append(b);
+});
+let running = false, flashAt = -1e9, flashHue = 0;
+function onLine(d) { flashAt = performance.now(); flashHue = (d.i * 47) % 360; }
+$('#go').onclick = () => {
+  const text = $('#ct').value.trim(), mq = $('#mq');
+  mq.textContent = text;
+  mq.hidden = !text;
+  mq.style.animationDuration = Math.max(4, text.length * 1.1) + 's';
+  mq.style.color = color === '#ffffff' && mode !== 'rainbow' && mode !== 'lyric' ? '#000' : '#fff';
+  $('#stage').hidden = false;
+  running = true;
+  // Keep the screen on: Safari has no wake lock on plain http, but a playing muted video holds it.
+  $('#wake').play().catch(() => {});
+  if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(() => {});
+  requestAnimationFrame(loop);
+};
+$('#stage').onclick = () => { running = false; $('#stage').hidden = true; $('#wake').pause(); };
+function loop(now) {
+  if (!running) return;
+  let bg = color;
+  if (mode === 'blink') bg = Math.floor(now / 250) % 2 ? color : '#000';
+  else if (mode === 'rainbow') bg = `hsl(${(now / 12) % 360} 100% 55%)`;
+  else if (mode === 'lyric') {
+    // Flash bright on each lyric line start (same colour on every phone), then fade to a glow.
+    const k = Math.exp(-(now - flashAt) / 450);
+    bg = `hsl(${flashHue} 100% ${12 + 48 * k}%)`;
+  }
+  $('#stage').style.background = bg;
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
