@@ -32,7 +32,7 @@ h1{font-size:30px;font-weight:800;letter-spacing:-.5px;margin:0}
 .hint{color:var(--dim);font-size:14px;text-align:center;padding:28px 0}
 .row{display:flex;align-items:center;gap:12px;padding:8px 0}
 .cov{width:48px;height:48px;border-radius:9px;object-fit:cover;flex:none;background:var(--card)}
-.row .t{flex:1;min-width:0}
+.row .t,#mini .t{flex:1;min-width:0}
 .tt,.ta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tt{font-weight:700}
 .ta{font-size:13px;color:var(--dim)}
@@ -60,6 +60,7 @@ footer{position:fixed;left:0;right:0;bottom:0;z-index:6}
 .seg button.on{background:var(--pink);color:#fff}
 .seg button.on[data-m=original]{background:var(--orange)}
 #solo{font-size:12px;font-weight:700;color:var(--dim);background:rgba(0,0,0,.35);border-radius:99px;padding:7px 11px;flex:none}
+html[lang=en] .seg button,html[lang=en] #solo{padding:7px 8px;font-size:12px}  /* English labels are longer */
 #skip{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:0;flex:none;display:flex;align-items:center;justify-content:center}
 #skip:active{transform:scale(.88)}
 #confirm{background:var(--pink);padding:14px;display:flex;flex-direction:column;gap:10px}
@@ -109,7 +110,7 @@ h3{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--dim);margin:20
 @keyframes mq{from{transform:translate(100vw,-50%)}to{transform:translate(-100%,-50%)}}
 #exit{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));width:100%;text-align:center;font-size:12px;opacity:.45;mix-blend-mode:difference}
 #toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:#fff;color:var(--bg);font-weight:700;font-size:14px;
-  padding:9px 16px;border-radius:99px;opacity:0;transition:opacity .2s;z-index:40;pointer-events:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  padding:9px 16px;border-radius:20px;opacity:0;transition:opacity .2s;z-index:40;pointer-events:none;width:max-content;max-width:calc(100vw - 24px);text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 #toast.show{opacity:1}
 #wake{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none}
 </style>
@@ -344,7 +345,9 @@ function paintSearch() {
     });
     const list = lists[tab[0]] || [];
     parts.push(tabs, ...(list.length ? list.map(s => songRow(s)) : [el('p', 'hint', tab[2])]));
+    const sl = box.querySelector('.tabs')?.scrollLeft;   // the tab row is rebuilt: keep it where the guest scrolled it
     box.replaceChildren(...parts);
+    if (sl) tabs.scrollLeft = sl;
     return;
   }
   if (!results.length) { box.replaceChildren(el('p', 'hint', T('没找到，换个写法试试（简繁、英文名都可以）', 'Nothing found. Try another spelling (simplified, traditional or English names all work)'))); return; }
@@ -445,15 +448,21 @@ function render(st) {
   paintNow(); paintQueue();
   paintSearch();
 }
-let es;
+let es, retry;
 function connect() {
+  clearTimeout(retry);
+  if (es) es.close();
   es = new EventSource('/api/events');
   es.addEventListener('state', e => render(JSON.parse(e.data)));
   es.addEventListener('line', e => onLine(JSON.parse(e.data)));
-  es.onerror = () => { $('#nowSub').textContent = T('连不上主人的手机，重连中…', "Can't reach the host's phone, reconnecting…"); };
+  es.onerror = () => {
+    $('#nowSub').textContent = T('连不上主人的手机，重连中…', "Can't reach the host's phone, reconnecting…");
+    if (es.readyState === EventSource.CLOSED) retry = setTimeout(connect, 2000);   // the browser gave up: try again ourselves
+  };
 }
 connect();
-document.addEventListener('visibilitychange', () => { if (!document.hidden && es.readyState === EventSource.CLOSED) connect(); });
+// Back from a locked phone or another app, the old stream may look open but be dead: always start a new one.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) connect(); });
 paintSearch(); paintQueue();
 
 // 互动

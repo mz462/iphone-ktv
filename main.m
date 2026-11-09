@@ -167,7 +167,7 @@ static NSString *songPref(NSString *name) { return [NSString stringWithFormat:@"
 
 static void updateSyncUI(void) {
     syncLabel.text = [NSString stringWithFormat:@"%@\n%@", lyricsOffset > 0 ? [NSString stringWithFormat:T(@"歌词提前 %.1fs", @"Lyrics %.1fs earlier"), lyricsOffset]
-                      : lyricsOffset < 0 ? [NSString stringWithFormat:T(@"歌词延后 %.1fs", @"Lyrics %.1fs later"), -lyricsOffset] : T(@"歌词时间 原样", @"Lyrics timing unchanged"),
+                      : lyricsOffset < 0 ? [NSString stringWithFormat:T(@"歌词延后 %.1fs", @"Lyrics %.1fs later"), -lyricsOffset] : T(@"歌词时间 原样", @"Lyrics on time"),
                       candidates.count > 1 ? [NSString stringWithFormat:T(@"版本 %ld/%lu", @"Version %ld/%lu"), (long)pick + 1, (unsigned long)candidates.count]
                       : candidates.count ? T(@"只有 1 个版本", @"Only 1 version") : @"—"];
     versionButton.enabled = candidates.count > 1;
@@ -800,6 +800,10 @@ static void tick(void) {
         showIntro();
         L(@"song: %@ — %@  album=%@  dur=%.1f", songTitle, songArtist, it.albumTitle, it.playbackDuration);
         fetchLyrics(it, key);
+        noSing = NO;   // every new song: ask again whether it has a backing track, and keep 原唱/伴唱 as it was
+        updateModeUI();
+        checkSing(it, key);
+        sendVocals();
     } else if (moved && partyNext && [it.playbackStoreID isEqual:partyNext[@"id"]]) {
         partySongChanged(it);   // a guest picked the song that was already playing
         noSing = NO;
@@ -1113,7 +1117,7 @@ static NSDictionary *partyState(void) {
 // Redraw the TV queue and the phone line, and tell every guest.
 static void partyRefresh(void) {
     NSArray *up = upcoming();
-    partyLabel.text = partyURL ? [NSString stringWithFormat:T(@"派对 %@ · 排队 %lu 首\n切走本 App 派对会停 · 建议开“引导式访问”（设置›辅助功能）", @"Party %@ · %lu queued\nParty stops if you leave this app · Turn on Guided Access (Settings › Accessibility)"), [partyURL substringFromIndex:7], (unsigned long)up.count]
+    partyLabel.text = partyURL ? [NSString stringWithFormat:T(@"派对 %@ · 排队 %lu 首\n切走本 App 派对会停 · 建议开“引导式访问”（设置›辅助功能）", @"Party %@ · %lu queued\nKeep this app open · Guided Access helps"), [partyURL substringFromIndex:7], (unsigned long)up.count]
                                : T(@"派对：手机没连 Wi-Fi", @"Party: phone is not on Wi-Fi");
     if (tvQueue) {
         CGFloat H = tvQueue.superview.bounds.size.height;
@@ -1288,6 +1292,7 @@ static void handle(nw_connection_t c, NSString *method, NSString *target, NSData
     if (![j isKindOfClass:NSDictionary.class]) j = nil;
     NSString *by = field(j, @"by", 12), *uid = field(j, @"uid", 40);
     if (!by.length) by = T(@"朋友", @"Guest");
+    BOOL en = [j[@"en"] isKindOfClass:NSNumber.class] && [j[@"en"] boolValue];   // error text follows the guest's phone
     NSData *ok = jsonData(@{@"ok": @YES});
     if ([path isEqual:@"/"]) {
         static NSData *page;
@@ -1312,25 +1317,34 @@ static void handle(nw_connection_t c, NSString *method, NSString *target, NSData
         for (NSURLQueryItem *i in u.queryItems) if ([i.name isEqual:@"q"]) q = i.value;
         searchSongs(q, ^(NSArray *songs) { reply(c, 200, @"application/json", jsonData(songs)); });
     } else if ([path isEqual:@"/api/queue"] && j) {
-        NSString *sid = field(j, @"id", 20), *artURL = field(j, @"art", 400), *title = field(j, @"title", 80);
-        if (!sid.length || [sid rangeOfCharacterFromSet:[NSCharacterSet characterSetWithCharactersInString:@"0123456789"].invertedSet].location != NSNotFound
-            || partyQueue.count >= 50) {
-            reply(c, 400, @"text/plain", nil);
+        NSString *sid = field(j, @"id", 20);
+        NSData *full = jsonData(@{@"msg": en ? @"The queue is full, try again after a few songs" : @"排队满了，唱掉几首再点"});
+        NSData *unknown = jsonData(@{@"msg": en ? @"Couldn't find that song, try again" : @"没找到这首歌，再试一次"});
+        if (partyQueue.count >= 50) { reply(c, 400, @"application/json", full); return; }
+        if (!sid.length || [sid rangeOfCharacterFromSet:[NSCharacterSet characterSetWithCharactersInString:@"0123456789"].invertedSet].location != NSNotFound) {
+            reply(c, 400, @"application/json", unknown);
             return;
         }
-        [partyQueue addObject:@{@"id": sid, @"title": title, @"artist": field(j, @"artist", 80), @"by": by, @"uid": uid,
-                                @"pid": @(++pickCount), @"dur": [j[@"dur"] isKindOfClass:NSNumber.class] ? j[@"dur"] : @0, @"art": [artURL hasPrefix:@"https://"] ? artURL : @""}];
-        NSNumber *pid = partyQueue.lastObject[@"pid"];
-        danmaku(by, [NSString stringWithFormat:T(@"点了《%@》", @"picked “%@”"), title], rgb(1, 0.82, 0.2));
-        NSUInteger t = [tonight indexOfObjectPassingTest:^BOOL(NSDictionary *d, NSUInteger k, BOOL *stop) { return [d[@"id"] isEqual:sid]; }];
-        NSMutableDictionary *h = t != NSNotFound ? tonight[t] : [@{@"id": sid, @"title": title, @"artist": partyQueue.lastObject[@"artist"],
-            @"art": partyQueue.lastObject[@"art"], @"dur": [j[@"dur"] isKindOfClass:NSNumber.class] ? j[@"dur"] : @0, @"n": @0} mutableCopy];
-        if (t != NSNotFound) [tonight removeObjectAtIndex:t];
-        h[@"n"] = @([h[@"n"] intValue] + 1);
-        [tonight insertObject:h atIndex:0];
-        feedParty(YES);
-        partyRefresh();
-        reply(c, 200, @"application/json", jsonData(@{@"ok": @YES, @"pos": @(upcoming().count), @"pid": pid}));
+        // The guest sends only the song's id; title, artist, cover and length come from Apple's catalog. So a made-up
+        // id is refused here instead of jamming the queue, and a guest can't put their own text or image links on the
+        // TV and on other guests' phones.
+        [Catalog get:[@"https://api.music.apple.com/v1/catalog/{sf}/songs/" stringByAppendingString:sid] done:^(NSInteger code, NSString *b) {
+            NSDictionary *s = songList(parseJSON(b)[@"data"]).firstObject;
+            if (!s || partyQueue.count >= 50) { reply(c, 400, @"application/json", s ? full : unknown); return; }
+            [partyQueue addObject:@{@"id": sid, @"title": s[@"title"], @"artist": s[@"artist"], @"by": by, @"uid": uid,
+                                    @"pid": @(++pickCount), @"dur": s[@"dur"], @"art": s[@"art"]}];
+            NSNumber *pid = partyQueue.lastObject[@"pid"];
+            danmaku(by, [NSString stringWithFormat:T(@"点了《%@》", @"picked “%@”"), s[@"title"]], rgb(1, 0.82, 0.2));
+            NSUInteger t = [tonight indexOfObjectPassingTest:^BOOL(NSDictionary *d, NSUInteger k, BOOL *stop) { return [d[@"id"] isEqual:sid]; }];
+            NSMutableDictionary *h = t != NSNotFound ? tonight[t] : [@{@"id": sid, @"title": s[@"title"], @"artist": s[@"artist"],
+                @"art": s[@"art"], @"dur": s[@"dur"], @"n": @0} mutableCopy];
+            if (t != NSNotFound) [tonight removeObjectAtIndex:t];
+            h[@"n"] = @([h[@"n"] intValue] + 1);
+            [tonight insertObject:h atIndex:0];
+            feedParty(YES);
+            partyRefresh();
+            reply(c, 200, @"application/json", jsonData(@{@"ok": @YES, @"pos": @(upcoming().count), @"pid": pid}));
+        }];
     } else if ([path isEqual:@"/api/control"] && j) {
         // Guest remote. Each action names its target, so two guests tapping at once don't skip twice.
         NSString *action = field(j, @"action", 10), *value = field(j, @"value", 80);
@@ -1351,7 +1365,7 @@ static void handle(nw_connection_t c, NSString *method, NSString *target, NSData
                 return [[d[@"pid"] stringValue] isEqual:value] && !d[@"locked"] && (topping || (uid.length && [d[@"uid"] isEqual:uid]));
             }];
             if (i == NSNotFound) {
-                reply(c, 409, @"application/json", jsonData(@{@"msg": [j[@"en"] boolValue] ? (topping ? @"That song is already up" : @"That song is already up, or it isn't yours")
+                reply(c, 409, @"application/json", jsonData(@{@"msg": en ? (topping ? @"That song is already up" : @"That song is already up, or it isn't yours")
                                                    : (topping ? @"这首已经轮到了" : @"这首已经轮到了，或者不是你点的")}));
                 return;
             }
@@ -1396,9 +1410,17 @@ static void readRequest(nw_connection_t c, NSMutableData *buf) {
         NSArray *hl = [head componentsSeparatedByString:@"\r\n"];
         NSArray *rl = [hl.firstObject componentsSeparatedByString:@" "];
         NSInteger len = 0;
-        for (NSString *h in hl) if ([h.lowercaseString hasPrefix:@"content-length:"]) len = [h substringFromIndex:15].integerValue;
+        BOOL json = NO;
+        for (NSString *h in hl) {
+            NSString *l = h.lowercaseString;
+            if ([l hasPrefix:@"content-length:"]) len = [h substringFromIndex:15].integerValue;
+            if ([l hasPrefix:@"content-type:"]) json = [[[l substringFromIndex:13] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet] hasPrefix:@"application/json"];
+        }
         NSUInteger start = NSMaxRange(end);
         if (rl.count < 2 || len < 0 || len > 65536) { nw_connection_cancel(c); return; }
+        // The song page posts JSON. A page on some other website can't send that type to this phone without asking
+        // first, and the ask gets no answer here, so only the song page can pick, skip or cheer.
+        if ([rl[0] isEqual:@"POST"] && !json) { reply(c, 415, @"text/plain", nil); return; }
         if (buf.length - start < (NSUInteger)len) { more ? readRequest(c, buf) : nw_connection_cancel(c); return; }
         handle(c, rl[0], rl[1], [buf subdataWithRange:NSMakeRange(start, len)]);
     });
