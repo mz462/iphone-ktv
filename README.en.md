@@ -18,7 +18,7 @@ Left: the phone is the console. One tap for original or backing track, a slider 
 Right: party mode. The top left of the TV shows the next songs and who picked them. Friends' comments and emoji fly across the TV. Scan the code at the top right to pick songs.</td>
 </tr></table>
 
-The app's screens are in Chinese for now.
+The app, the TV screen and the guests' song page follow the phone language: Chinese for Chinese, English for everything else.
 
 ## Why it is not on the App Store
 

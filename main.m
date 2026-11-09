@@ -20,6 +20,14 @@
 #import <dlfcn.h>
 #import "MRProbe-Swift.h"
 
+// UI text follows the phone language: Chinese (zh, yue) or English.
+static BOOL zhUI(void) {
+    static int z = -1;
+    if (z < 0) { NSString *l = NSLocale.preferredLanguages.firstObject ?: @""; z = [l hasPrefix:@"zh"] || [l hasPrefix:@"yue"]; }
+    return z;
+}
+#define T(zh, en) (zhUI() ? (zh) : (en))
+
 // Seconds added to the playback time before picking a line. Set per song with 提前/延后 on the phone.
 static double lyricsOffset;
 // Lines wider than this many em (font size units) are split in two. Fits the TV slot at 16:9.
@@ -38,7 +46,7 @@ static NSArray<NSDictionary *> *candidates;  // LRCLIB hits with distinct lyrics
 static NSInteger pick;               // index into candidates on screen
 static NSString *songTitle = @"", *songArtist = @"";
 static double songDur;
-static NSString *status = @"等待 Music 播放…";
+static NSString *status;
 static NSInteger shown = -2;         // line index on screen; -2 forces a redraw
 static UIImage *art;                 // now-playing artwork, nil until Music provides it
 static int artTries;
@@ -158,10 +166,10 @@ static NSArray<NSArray *> *parseLRC(NSString *lrc) {
 static NSString *songPref(NSString *name) { return [NSString stringWithFormat:@"%@|%@", name, songKey]; }
 
 static void updateSyncUI(void) {
-    syncLabel.text = [NSString stringWithFormat:@"%@\n%@", lyricsOffset > 0 ? [NSString stringWithFormat:@"歌词提前 %.1fs", lyricsOffset]
-                      : lyricsOffset < 0 ? [NSString stringWithFormat:@"歌词延后 %.1fs", -lyricsOffset] : @"歌词时间 原样",
-                      candidates.count > 1 ? [NSString stringWithFormat:@"版本 %ld/%lu", (long)pick + 1, (unsigned long)candidates.count]
-                      : candidates.count ? @"只有 1 个版本" : @"—"];
+    syncLabel.text = [NSString stringWithFormat:@"%@\n%@", lyricsOffset > 0 ? [NSString stringWithFormat:T(@"歌词提前 %.1fs", @"Lyrics %.1fs earlier"), lyricsOffset]
+                      : lyricsOffset < 0 ? [NSString stringWithFormat:T(@"歌词延后 %.1fs", @"Lyrics %.1fs later"), -lyricsOffset] : T(@"歌词时间 原样", @"Lyrics timing unchanged"),
+                      candidates.count > 1 ? [NSString stringWithFormat:T(@"版本 %ld/%lu", @"Version %ld/%lu"), (long)pick + 1, (unsigned long)candidates.count]
+                      : candidates.count ? T(@"只有 1 个版本", @"Only 1 version") : @"—"];
     versionButton.enabled = candidates.count > 1;
 }
 
@@ -253,7 +261,7 @@ static void useCandidates(MPMediaItem *it, NSArray *all) {
         [found insertObject:e[1] atIndex:[[e[1][@"id"] description] isEqual:saved] ? 0 : found.count];
     }
     L(@"want=%c, %lu LRCLIB synced hits, %lu distinct", want ?: '-', (unsigned long)all.count, (unsigned long)found.count);
-    if (!found.count) { status = @"没有找到带时间轴的歌词"; shown = -2; return; }
+    if (!found.count) { status = T(@"没有找到带时间轴的歌词", @"No timed lyrics found"); shown = -2; return; }
     candidates = found;
     showCandidate(0);
 }
@@ -560,15 +568,15 @@ static void applyArt(void) {
 static void updateModeUI(void) {
     UIColor *color = original ? UIColor.systemOrangeColor : UIColor.systemPinkColor;
     UIButtonConfiguration *c = modeButton.configuration;
-    c.title = original ? @"原唱" : @"伴唱";
-    c.subtitle = original ? @"点一下切到伴唱" : @"点一下切到原唱";
+    c.title = original ? T(@"原唱", @"Original") : T(@"伴唱", @"Backing");
+    c.subtitle = original ? T(@"点一下切到伴唱", @"Tap for backing track") : T(@"点一下切到原唱", @"Tap for original");
     c.image = [UIImage systemImageNamed:original ? @"person.wave.2.fill" : @"music.mic"];
     c.baseBackgroundColor = color;
     modeButton.configuration = c;
-    vocalLabel.text = noSing ? @"这首歌不支持人声消除，只有原唱"
-        : original ? @"原唱：Music 原声" : [NSString stringWithFormat:@"伴唱保留人声 %d%%", vocalLevel];
+    vocalLabel.text = noSing ? T(@"这首歌不支持人声消除，只有原唱", @"This song has no backing track, original only")
+        : original ? T(@"原唱：Music 原声", @"Original: the singer's own voice") : [NSString stringWithFormat:T(@"伴唱保留人声 %d%%", @"Backing: keeps %d%% of the voice"), vocalLevel];
     modeButton.hidden = vocalSlider.hidden = noSing;
-    tvMode.text = [NSString stringWithFormat:@"  %@  ", noSing ? @"仅原唱" : original ? @"原唱" : @"伴唱"];
+    tvMode.text = [NSString stringWithFormat:@"  %@  ", noSing ? T(@"仅原唱", @"Original only") : original ? T(@"原唱", @"Original") : T(@"伴唱", @"Backing")];
     tvMode.backgroundColor = noSing ? UIColor.systemGrayColor : color;
     [tvMode sizeToFit];
     CGRect f = tvMode.frame;
@@ -582,7 +590,7 @@ static void updateModeUI(void) {
 static void showIntro(void) {
     if (!tvIntro) return;
     tvIntroTitle.text = songTitle;
-    tvIntroArtist.text = partyNow ? [NSString stringWithFormat:@"%@  ·  %@ 点歌", songArtist, partyNow[@"by"]] : songArtist;
+    tvIntroArtist.text = partyNow ? [NSString stringWithFormat:T(@"%@  ·  %@ 点歌", @"%@  ·  picked by %@"), songArtist, partyNow[@"by"]] : songArtist;
     introAt = CACurrentMediaTime();
     introUp = YES;
     pulse = 1;
@@ -778,7 +786,7 @@ static void tick(void) {
     lastIndex = p.indexOfNowPlayingItem;
     NSString *key = it.title ? [NSString stringWithFormat:@"%@|%@|%.0f", it.title, it.artist, it.playbackDuration] : nil;
     if (key && ![key isEqual:songKey]) {
-        songKey = key; lines = nil; status = @"查歌词中…"; shown = -2;
+        songKey = key; lines = nil; status = T(@"查歌词中…", @"Finding lyrics…"); shown = -2;
         candidates = nil;
         lyricsOffset = [NSUserDefaults.standardUserDefaults doubleForKey:songPref(@"offset")];
         updateSyncUI();
@@ -932,7 +940,7 @@ static void showQR(void) {
     CGImageRef cg = [[CIContext context] createCGImage:ci fromRect:ci.extent];
     tvQR.image = [UIImage imageWithCGImage:cg];   // tiny; the view scales it up with nearest-neighbour
     CGImageRelease(cg);
-    tvQRLabel.text = [@"扫码点歌\n" stringByAppendingString:[partyURL substringFromIndex:7]];
+    tvQRLabel.text = [T(@"扫码点歌\n", @"Scan to pick songs\n") stringByAppendingString:[partyURL substringFromIndex:7]];
 }
 
 // Emoji rises from the bottom edge, wobbling, and fades near the top.
@@ -1105,8 +1113,8 @@ static NSDictionary *partyState(void) {
 // Redraw the TV queue and the phone line, and tell every guest.
 static void partyRefresh(void) {
     NSArray *up = upcoming();
-    partyLabel.text = partyURL ? [NSString stringWithFormat:@"派对 %@ · 排队 %lu 首\n切走本 App 派对会停 · 建议开“引导式访问”（设置›辅助功能）", [partyURL substringFromIndex:7], (unsigned long)up.count]
-                               : @"派对：手机没连 Wi-Fi";
+    partyLabel.text = partyURL ? [NSString stringWithFormat:T(@"派对 %@ · 排队 %lu 首\n切走本 App 派对会停 · 建议开“引导式访问”（设置›辅助功能）", @"Party %@ · %lu queued\nParty stops if you leave this app · Turn on Guided Access (Settings › Accessibility)"), [partyURL substringFromIndex:7], (unsigned long)up.count]
+                               : T(@"派对：手机没连 Wi-Fi", @"Party: phone is not on Wi-Fi");
     if (tvQueue) {
         CGFloat H = tvQueue.superview.bounds.size.height;
         NSMutableAttributedString *s = [NSMutableAttributedString new];
@@ -1116,12 +1124,12 @@ static void partyRefresh(void) {
                                NSForegroundColorAttributeName: UIColor.whiteColor};
         NSDictionary *who = @{NSFontAttributeName: [UIFont systemFontOfSize:H * 0.024 weight:UIFontWeightSemibold],
                               NSForegroundColorAttributeName: [UIColor colorWithWhite:1 alpha:0.6]};
-        if (up.count) [s appendAttributedString:[[NSAttributedString alloc] initWithString:@"下一首\n" attributes:head]];
+        if (up.count) [s appendAttributedString:[[NSAttributedString alloc] initWithString:T(@"下一首\n", @"Up next\n") attributes:head]];
         for (NSUInteger k = 0; k < MIN(up.count, 3); k++) {
             [s appendAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%lu. %@", k + 1, up[k][@"title"]] attributes:body]];
-            [s appendAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"   %@ 点\n", up[k][@"by"]] attributes:who]];
+            [s appendAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:T(@"   %@ 点\n", @"   by %@\n"), up[k][@"by"]] attributes:who]];
         }
-        if (up.count > 3) [s appendAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"还有 %lu 首", up.count - 3] attributes:who]];
+        if (up.count > 3) [s appendAttributedString:[[NSAttributedString alloc] initWithString:[NSString stringWithFormat:T(@"还有 %lu 首", @"%lu more"), up.count - 3] attributes:who]];
         tvQueue.attributedText = s;
         CGRect f = tvQueue.frame;
         f.size.height = [tvQueue sizeThatFits:CGSizeMake(f.size.width, CGFLOAT_MAX)].height;
@@ -1279,7 +1287,7 @@ static void handle(nw_connection_t c, NSString *method, NSString *target, NSData
     NSDictionary *j = [method isEqual:@"POST"] ? [NSJSONSerialization JSONObjectWithData:body options:0 error:nil] : nil;
     if (![j isKindOfClass:NSDictionary.class]) j = nil;
     NSString *by = field(j, @"by", 12), *uid = field(j, @"uid", 40);
-    if (!by.length) by = @"朋友";
+    if (!by.length) by = T(@"朋友", @"Guest");
     NSData *ok = jsonData(@{@"ok": @YES});
     if ([path isEqual:@"/"]) {
         static NSData *page;
@@ -1313,7 +1321,7 @@ static void handle(nw_connection_t c, NSString *method, NSString *target, NSData
         [partyQueue addObject:@{@"id": sid, @"title": title, @"artist": field(j, @"artist", 80), @"by": by, @"uid": uid,
                                 @"pid": @(++pickCount), @"dur": [j[@"dur"] isKindOfClass:NSNumber.class] ? j[@"dur"] : @0, @"art": [artURL hasPrefix:@"https://"] ? artURL : @""}];
         NSNumber *pid = partyQueue.lastObject[@"pid"];
-        danmaku(by, [NSString stringWithFormat:@"点了《%@》", title], rgb(1, 0.82, 0.2));
+        danmaku(by, [NSString stringWithFormat:T(@"点了《%@》", @"picked “%@”"), title], rgb(1, 0.82, 0.2));
         NSUInteger t = [tonight indexOfObjectPassingTest:^BOOL(NSDictionary *d, NSUInteger k, BOOL *stop) { return [d[@"id"] isEqual:sid]; }];
         NSMutableDictionary *h = t != NSNotFound ? tonight[t] : [@{@"id": sid, @"title": title, @"artist": partyQueue.lastObject[@"artist"],
             @"art": partyQueue.lastObject[@"art"], @"dur": [j[@"dur"] isKindOfClass:NSNumber.class] ? j[@"dur"] : @0, @"n": @0} mutableCopy];
@@ -1329,12 +1337,12 @@ static void handle(nw_connection_t c, NSString *method, NSString *target, NSData
         if ([action isEqual:@"skip"] && [value isEqual:songTitle] && !partySkipped) {
             partySkipped = YES;   // two taps can land before the song changes; only the first one skips
             [MPMusicPlayerController.systemMusicPlayer skipToNextItem];
-            danmaku(by, [NSString stringWithFormat:@"切掉了《%@》", songTitle], rgb(1, 0.27, 0.23));
+            danmaku(by, [NSString stringWithFormat:T(@"切掉了《%@》", @"skipped “%@”"), songTitle], rgb(1, 0.27, 0.23));
         } else if ([action isEqual:@"mode"] && !noSing && original != [value isEqual:@"original"]) {
             original = !original;
             sendVocals();
             updateModeUI();
-            danmaku(by, original ? @"切到原唱" : @"切到伴唱", original ? UIColor.systemOrangeColor : UIColor.systemPinkColor);
+            danmaku(by, original ? T(@"切到原唱", @"switched to original") : T(@"切到伴唱", @"switched to backing track"), original ? UIColor.systemOrangeColor : UIColor.systemPinkColor);
         } else if ([action isEqual:@"remove"] || [action isEqual:@"top"]) {
             // Picks Music doesn't have yet; value is the pick's pid. Anyone may 优先 (the TV says who), only the
             // picker may 撤回.
@@ -1343,7 +1351,8 @@ static void handle(nw_connection_t c, NSString *method, NSString *target, NSData
                 return [[d[@"pid"] stringValue] isEqual:value] && !d[@"locked"] && (topping || (uid.length && [d[@"uid"] isEqual:uid]));
             }];
             if (i == NSNotFound) {
-                reply(c, 409, @"application/json", jsonData(@{@"msg": topping ? @"这首已经轮到了" : @"这首已经轮到了，或者不是你点的"}));
+                reply(c, 409, @"application/json", jsonData(@{@"msg": [j[@"en"] boolValue] ? (topping ? @"That song is already up" : @"That song is already up, or it isn't yours")
+                                                   : (topping ? @"这首已经轮到了" : @"这首已经轮到了，或者不是你点的")}));
                 return;
             }
             if (!topping) {
@@ -1359,7 +1368,7 @@ static void handle(nw_connection_t c, NSString *method, NSString *target, NSData
                 partyNext = d;
                 prefetchLyrics(d);
                 [MPMusicPlayerController.systemMusicPlayer prependQueueDescriptor:[[MPMusicPlayerStoreQueueDescriptor alloc] initWithStoreIDs:@[d[@"id"]]]];
-                danmaku(by, [NSString stringWithFormat:@"把《%@》顶到下一首", d[@"title"]], rgb(1, 0.82, 0.2));
+                danmaku(by, [NSString stringWithFormat:T(@"把《%@》顶到下一首", @"moved “%@” up next"), d[@"title"]], rgb(1, 0.82, 0.2));
             }
             partyRefresh();
         }
@@ -1778,14 +1787,14 @@ static void partyTick(void) {
     UIStackView *progress = stack(@[seekSlider, stack(@[phoneElapsed, phoneRemain], UILayoutConstraintAxisHorizontal, 0)],
                                   UILayoutConstraintAxisVertical, 0);
 
-    UIButton *restart = iconButton(@"重唱", @"arrow.counterclockwise", ^{ [p skipToBeginning]; [p play]; });
+    UIButton *restart = iconButton(T(@"重唱", @"Restart"), @"arrow.counterclockwise", ^{ [p skipToBeginning]; [p play]; });
     playButton = button(@"", @"play.fill", UIColor.whiteColor, 76, ^{ playing ? [p pause] : [p play]; });
     UIButtonConfiguration *pc = playButton.configuration;
     pc.baseForegroundColor = UIColor.blackColor;
     pc.preferredSymbolConfigurationForImage = [UIImageSymbolConfiguration configurationWithPointSize:30 weight:UIImageSymbolWeightBold];
     playButton.configuration = pc;
     [playButton.widthAnchor constraintEqualToConstant:76].active = YES;
-    UIButton *next = iconButton(@"切歌", @"forward.end.fill", ^{ [p skipToNextItem]; });
+    UIButton *next = iconButton(T(@"切歌", @"Skip"), @"forward.end.fill", ^{ [p skipToNextItem]; });
     UIStackView *transport = stack(@[restart, playButton, next], UILayoutConstraintAxisHorizontal, 0);
     transport.distribution = UIStackViewDistributionEqualSpacing;
     transport.alignment = UIStackViewAlignmentCenter;
@@ -1832,7 +1841,7 @@ static void partyTick(void) {
     logView.font = [UIFont monospacedSystemFontOfSize:9 weight:UIFontWeightRegular];
     logView.text = logText;
     [logView.heightAnchor constraintEqualToConstant:160].active = YES;
-    UIButton *logToggle = [UIButton systemButtonWithPrimaryAction:[UIAction actionWithTitle:@"日志" image:nil identifier:nil
+    UIButton *logToggle = [UIButton systemButtonWithPrimaryAction:[UIAction actionWithTitle:T(@"日志", @"Log") image:nil identifier:nil
                                                                                     handler:^(UIAction *a) { logView.hidden = !logView.hidden; }]];
     logToggle.tintColor = [UIColor colorWithWhite:1 alpha:0.3];
 
@@ -1843,9 +1852,9 @@ static void partyTick(void) {
         shown = -2;
         updateSyncUI();
     };
-    UIButton *earlier = iconButton(@"提前", @"backward.fill", ^{ nudge(0.5); });
-    UIButton *later = iconButton(@"延后", @"forward.fill", ^{ nudge(-0.5); });
-    versionButton = iconButton(@"换版本", @"arrow.triangle.2.circlepath", ^{
+    UIButton *earlier = iconButton(T(@"提前", @"Earlier"), @"backward.fill", ^{ nudge(0.5); });
+    UIButton *later = iconButton(T(@"延后", @"Later"), @"forward.fill", ^{ nudge(-0.5); });
+    versionButton = iconButton(T(@"换版本", @"Version"), @"arrow.triangle.2.circlepath", ^{
         showCandidate((pick + 1) % candidates.count);
         [NSUserDefaults.standardUserDefaults setObject:[candidates[pick][@"id"] description] forKey:songPref(@"lrc")];
     });
@@ -1885,6 +1894,7 @@ static void partyTick(void) {
 - (BOOL)application:(UIApplication *)app didFinishLaunchingWithOptions:(NSDictionary *)opts {
     app.idleTimerDisabled = YES;
     logText = [NSMutableString string];
+    status = T(@"等待 Music 播放…", @"Waiting for Music to play…");
     loadMR();
     sendVocals();  // start in 伴唱
     // Which CJK faces this iOS has, in case a heavier lyric font is wanted.
