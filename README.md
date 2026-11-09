@@ -1,5 +1,7 @@
 # MRProbe — 用 iPhone + 电视在家开 KTV
 
+[English](README.en.md)
+
 一台 iPhone 用 HDMI 接电视，就是一间 KTV：
 
 - **Apple Music 放歌**，手机上一键 **原唱 / 伴唱**，还能拖动人声大小（0–100）。
@@ -16,9 +18,6 @@
 左：手机是控制台，一键原唱/伴唱，拖动保留多少人声，歌词能提前/延后、换版本。<br>
 右：派对模式，电视左上角是接下来的歌和谁点的，朋友发的弹幕和 emoji 直接飘在电视上，右上角扫码点歌。</td>
 </tr></table>
-
-English: an iPhone KTV (karaoke) app. Apple Music plays the song, the app turns the vocals down through
-Apple Music Sing, shows timed lyrics on an HDMI TV, and lets guests on the same Wi-Fi queue songs from Safari.
 
 ## 为什么不上 App Store
 
