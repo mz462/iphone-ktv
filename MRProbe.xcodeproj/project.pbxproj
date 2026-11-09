@@ -7,15 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		02ED7F96648AB505161A099D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49865A5C7B587F76EB68AE9A /* Assets.xcassets */; };
 		2345E39781D1CBE6A52BFF80 /* Catalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1BD19E3B069A90BD33E1074 /* Catalog.swift */; };
 		2435DFF899B4F8E50DE7C341 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B017862B3134B8EAFC00805 /* main.m */; };
 		31BEDD9EE50D5A7475B4E215 /* party.html in Resources */ = {isa = PBXBuildFile; fileRef = 0DCD4FECE81AE216A2A7645B /* party.html */; };
+		DBED45AF957E6AC502600F0F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 699C99C01D754C2B2B9DA6A1 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0DCD4FECE81AE216A2A7645B /* party.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = party.html; sourceTree = "<group>"; };
+		49865A5C7B587F76EB68AE9A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		587AED9C59133F69DC89ED92 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		7E1C111CF82C73629024CFEB /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		8B017862B3134B8EAFC00805 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		C16F2F96DC8222222C692B37 /* MRProbe.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MRProbe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF975839183E25774E7B3656 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		E1BD19E3B069A90BD33E1074 /* Catalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catalog.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -28,12 +34,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		EC4125247B65A1136C4711EC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				49865A5C7B587F76EB68AE9A /* Assets.xcassets */,
+				699C99C01D754C2B2B9DA6A1 /* InfoPlist.strings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		F7952E304BAFB5309F387F96 = {
 			isa = PBXGroup;
 			children = (
 				E1BD19E3B069A90BD33E1074 /* Catalog.swift */,
 				8B017862B3134B8EAFC00805 /* main.m */,
 				0DCD4FECE81AE216A2A7645B /* party.html */,
+				EC4125247B65A1136C4711EC /* Resources */,
 				CD33CD1E207E3745AA25693E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -80,6 +96,8 @@
 			knownRegions = (
 				Base,
 				en,
+				"zh-Hans",
+				"zh-Hant",
 			);
 			mainGroup = F7952E304BAFB5309F387F96;
 			minimizedProjectReferenceProxies = 1;
@@ -98,6 +116,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				02ED7F96648AB505161A099D /* Assets.xcassets in Resources */,
+				DBED45AF957E6AC502600F0F /* InfoPlist.strings in Resources */,
 				31BEDD9EE50D5A7475B4E215 /* party.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -115,6 +135,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		699C99C01D754C2B2B9DA6A1 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				CF975839183E25774E7B3656 /* en */,
+				7E1C111CF82C73629024CFEB /* zh-Hans */,
+				587AED9C59133F69DC89ED92 /* zh-Hant */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		1EF206018B245C58A301125A /* Debug */ = {
@@ -189,8 +222,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "KTV Party";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Shows lyrics for the song playing in Music.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "让同一 Wi-Fi 的朋友扫码点歌、发应援。";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Lets friends on the same Wi-Fi scan the code to pick songs and send cheers.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -217,8 +251,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "KTV Party";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Shows lyrics for the song playing in Music.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "让同一 Wi-Fi 的朋友扫码点歌、发应援。";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Lets friends on the same Wi-Fi scan the code to pick songs and send cheers.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

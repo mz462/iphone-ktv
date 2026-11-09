@@ -42,8 +42,8 @@ You can also change `DEVELOPMENT_TEAM` and the bundle id in `project.yml` and ru
 
 ## How to play
 
-1. Connect the phone to HDMI and open MRProbe. The first time, it asks for Apple Music and local network access. Allow both.
-2. Play a song in Music and MRProbe follows whatever is playing. You can also scan the code yourself and search and queue songs from the song page.
+1. Connect the phone to HDMI and open the app (it is called "KTV Party" on the home screen). The first time, it asks for Apple Music and local network access. Allow both.
+2. Play a song in Music and the app follows whatever is playing. You can also scan the code yourself and search and queue songs from the song page.
 3. Friends scan the QR code in the corner of the TV (`http://<phone IP>:8080`) to open the song page.
 
 ## Known limits
